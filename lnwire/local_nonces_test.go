@@ -53,7 +53,8 @@ func TestLocalNoncesDataEncodeDecodeValue(t *testing.T) {
 			},
 		},
 		{
-			name: "multiple entries unsorted", // Sorting is handled internally by encoder
+			// Sorting is handled internally by encoder
+			name: "multiple entries unsorted",
 			inputData: &LocalNoncesData{
 				NoncesMap: map[chainhash.Hash]Musig2Nonce{
 					makeTestTxId(3): makeTestNonce(3),
@@ -80,7 +81,8 @@ func TestLocalNoncesDataEncodeDecodeValue(t *testing.T) {
 			t.Parallel()
 
 			var b bytes.Buffer
-			var buf [8]byte // Dummy buffer for encoder/decoder interface
+			// Dummy buffer for encoder/decoder interface
+			var buf [8]byte
 
 			// Test encoding using the direct encoder function for the value.
 			err := encodeLocalNoncesData(&b, test.inputData, &buf)
@@ -115,21 +117,21 @@ func TestLocalNoncesDataDecodeFailuresValue(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name                  string
-		valueBytes            []byte // Raw bytes for the TLV value
-		length                uint64 // Length provided to the decoder for these valueBytes
+		name                   string
+		valueBytes             []byte // Raw bytes for the TLV value
+		length                 uint64 // Length provided to the decoder for these valueBytes
 		expectedErrorSubstring string
 	}{
 		{
-			name:                  "record too short for numEntries (1 byte value)",
-			valueBytes:            []byte{0x01},
-			length:                1,
+			name:                   "record too short for numEntries (1 byte value)",
+			valueBytes:             []byte{0x01},
+			length:                 1,
 			expectedErrorSubstring: "record too short for numEntries",
 		},
 		{
-			name:                  "length mismatch (numEntries implies more data than length indicates)",
-			valueBytes:            []byte{0x00, 0x01}, // numEntries = 1
-			length:                2, // But recordLen implies only numEntries field, no actual entry data
+			name:                   "length mismatch (numEntries implies more data than length indicates)",
+			valueBytes:             []byte{0x00, 0x01}, // numEntries = 1
+			length:                 2,                  // But recordLen implies only numEntries field, no actual entry data
 			expectedErrorSubstring: "length mismatch",
 		},
 		{
@@ -138,34 +140,34 @@ func TestLocalNoncesDataDecodeFailuresValue(t *testing.T) {
 			// We provide the full 100 bytes of value (numEntries + 1 entry).
 			valueBytes: append([]byte{0x00, 0x01}, make([]byte, 98)...),
 			// But we tell the decoder the record was 101 bytes long.
-			length:                101,
+			length:                 101,
 			expectedErrorSubstring: "length mismatch",
 		},
 		{
 			name: "insufficient data for one entry content",
 			// numEntries = 1. valueBytes has numEntries. Length is for numEntries + 10 more bytes.
-			valueBytes:            append([]byte{0x00, 0x01}, make([]byte, 10)...),
-			length:                2 + 10, // 2 for numEntries, 10 for partial entry
+			valueBytes:             append([]byte{0x00, 0x01}, make([]byte, 10)...),
+			length:                 2 + 10,            // 2 for numEntries, 10 for partial entry
 			expectedErrorSubstring: "length mismatch", // The overall length check hits first
 		},
 		{
 			name: "too much data for declared entries (extra byte in valueBytes)",
 			// numEntries = 0. valueBytes has numEntries (0) and an extra byte. Length is 3.
 			// Expected record length for 0 entries is 2.
-			valueBytes:            []byte{0x00, 0x00, 0xFF},
-			length:                3,
+			valueBytes:             []byte{0x00, 0x00, 0xFF},
+			length:                 3,
 			expectedErrorSubstring: "length mismatch",
 		},
 		{
-			name:   "zero length value with zero entries",
-			valueBytes: []byte{0x00, 0x00},
-			length: 2,
+			name:                   "zero length value with zero entries",
+			valueBytes:             []byte{0x00, 0x00},
+			length:                 2,
 			expectedErrorSubstring: "", // No error expected
 		},
 		{
-			name:   "empty value with zero length (valid empty TLV value)",
-			valueBytes: []byte{},
-			length: 0,
+			name:                   "empty value with zero length (valid empty TLV value)",
+			valueBytes:             []byte{},
+			length:                 0,
 			expectedErrorSubstring: "", // No error expected
 		},
 	}

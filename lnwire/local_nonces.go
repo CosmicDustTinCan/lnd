@@ -2,7 +2,8 @@ package lnwire
 
 import (
 	"bytes"
-	"encoding/binary" // Added for direct binary operations
+	// Added for direct binary operations
+	"encoding/binary"
 	"io"
 	"sort"
 
@@ -19,7 +20,8 @@ type LocalNoncesRecordTypeDef = tlv.TlvType22
 // LocalNonceEntry holds a single TXID -> Musig2Nonce mapping.
 type LocalNonceEntry struct {
 	TXID  chainhash.Hash
-	Nonce Musig2Nonce // Musig2Nonce is [musig2.PubNonceSize]byte
+	// Musig2Nonce is [musig2.PubNonceSize]byte
+	Nonce Musig2Nonce
 }
 
 // LocalNoncesData is the core data structure holding the map of nonces.
@@ -39,9 +41,11 @@ func (lnd *LocalNoncesData) Record() tlv.Record {
 	return tlv.MakeStaticRecord(
 		(LocalNoncesRecordTypeDef)(nil).TypeVal(),
 		lnd,
-		func() uint64 { // Length function
+		// Length function
+		func() uint64 {
 			if lnd.NoncesMap == nil || len(lnd.NoncesMap) == 0 {
-				return 2 // Just space for numEntries (uint16)
+				// Just space for numEntries (uint16)
+				return 2
 			}
 			numEntries := len(lnd.NoncesMap)
 			return uint64(2 + numEntries*(chainhash.HashSize+musig2.PubNonceSize))
@@ -112,7 +116,8 @@ func decodeLocalNoncesData(r io.Reader, val interface{}, _ *[8]byte, recordLen u
 		// If recordLen is 0, it means an empty TLV value, which is valid for 0 entries.
 		// Ensure the map is empty in this case.
 		if recordLen == 0 {
-			if len(lnd.NoncesMap) > 0 { // Clear if it had previous entries
+			// Clear if it had previous entries
+		if len(lnd.NoncesMap) > 0 {
 				lnd.NoncesMap = make(map[chainhash.Hash]Musig2Nonce)
 			}
 			return nil
@@ -140,10 +145,11 @@ func decodeLocalNoncesData(r io.Reader, val interface{}, _ *[8]byte, recordLen u
 
 	// If numEntries is 0, the map should be empty.
 	if numEntries == 0 {
-		if len(lnd.NoncesMap) > 0 { // Clear if it had previous entries
-				lnd.NoncesMap = make(map[chainhash.Hash]Musig2Nonce)
-			}
-			return nil
+		// Clear if it had previous entries
+		if len(lnd.NoncesMap) > 0 {
+			lnd.NoncesMap = make(map[chainhash.Hash]Musig2Nonce)
+		}
+		return nil
 	}
 
 	// Prepare the map for new entries. Using 'make' here also clears any
@@ -154,11 +160,14 @@ func decodeLocalNoncesData(r io.Reader, val interface{}, _ *[8]byte, recordLen u
 		var txid chainhash.Hash
 		var nonce Musig2Nonce
 
+		// Should be UnexpectedEOF if recordLen was miscalculated or stream ends early
 		if _, err := io.ReadFull(r, txid[:]); err != nil {
-			return err // Should be UnexpectedEOF if recordLen was miscalculated or stream ends early
+			return err
 		}
+
+		// Similar to above
 		if _, err := io.ReadFull(r, nonce[:]); err != nil {
-			return err // Similar to above
+			return err
 		}
 		lnd.NoncesMap[txid] = nonce
 	}
